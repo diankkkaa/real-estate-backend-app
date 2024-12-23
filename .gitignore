@@ -1,0 +1,54 @@
+# Bytecode файли
+__pycache__/
+*.pyc
+*.pyo
+
+# Віртуальне середовище
+venv/
+env/
+
+# Конфіденційні файли
+*.env
+*.key
+*.pem
+
+# Лог-файли
+*.log
+
+# Кеш
+.cache/
+*.cache
+*.bak
+
+# IDE
+.idea/
+.vscode/
+
+# Системні файли
+.DS_Store
+Thumbs.db
+
+# Flask-сесії
+instance/
+
+# Міграції
+migrations/
+
+# Бази даних
+*.sqlite3
+*.db
+
+# Файли зображень
+*.jpg
+*.jpeg
+*.png
+*.gif
+
+# Тимчасові файли
+/tmp/
+
+# Windows
+*.exe
+*.dll
+
+

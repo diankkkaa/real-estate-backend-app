@@ -36,23 +36,80 @@ def add_object_with_photos():
         if field not in data:
             return jsonify({"error": f"Field {field} is required"}), 400
 
-    # Додавання нового об'єкта
+    # Детальна перевірка даних
     try:
+        title = data["title"]
+        if not isinstance(title, str) or len(title) > 255:
+            return jsonify({"error": "Invalid title. Must be a string with max length 255."}), 400
+
+        price = float(data["price"])
+        if price <= 0:
+            return jsonify({"error": "Invalid price. Must be a positive number."}), 400
+
+        square = float(data["square"])
+        if square <= 0:
+            return jsonify({"error": "Invalid square. Must be a positive number."}), 400
+
+        rooms = int(data["rooms"])
+        if rooms <= 0:
+            return jsonify({"error": "Invalid rooms. Must be a positive integer."}), 400
+
+        total_floors = int(data["total_floors"])
+        if total_floors <= 0:
+            return jsonify({"error": "Invalid total_floors. Must be a positive integer."}), 400
+
+        floor = data.get("floor")
+        if floor:
+            floor = int(floor)
+            if floor < 0:
+                return jsonify({"error": "Invalid floor. Must be a non-negative integer."}), 400
+
+        location = data["location"]
+        if not isinstance(location, str) or len(location) > 255:
+            return jsonify({"error": "Invalid location. Must be a string with max length 255."}), 400
+
+        category = data["category"]
+        if category not in ["новобудова", "стародавня будівля"]:
+            return jsonify({"error": "Invalid category. Must be 'новобудова' or 'стародавня будівля'."}), 400
+
+        heating = data["heating"]
+        if heating not in ["централізоване", "автономне", "індивідуальне"]:
+            return jsonify({"error": "Invalid heating. Must be 'централізоване', 'автономне', or 'індивідуальне'."}), 400
+
+        code = int(data["code"])
+        if code <= 0:
+            return jsonify({"error": "Invalid code. Must be a positive integer."}), 400
+
+        obj_type = data["type"]
+        if obj_type not in ["квартира", "будинок"]:
+            return jsonify({"error": "Invalid type. Must be 'квартира' or 'будинок'."}), 400
+
+        balcony = data.get("balcony", "false").lower()
+        if balcony not in ["true", "false"]:
+            return jsonify({"error": "Invalid balcony. Must be 'true' or 'false'."}), 400
+        balcony = balcony == "true"
+
+
+        # Спеціальна перевірка для "будинок"
+        if obj_type == "будинок" and (floor not in [None, 0]):
+            return jsonify({"error": "For type 'будинок', floor must be empty or 0."}), 400
+
+        # Додавання нового об'єкта
         new_object = Object(
-            title=data["title"],
+            title=title,
             description=data.get("description"),
-            type=data["type"],
-            rooms=int(data["rooms"]),
-            floor=data.get("floor"),  # Може бути відсутнє
-            total_floors=int(data["total_floors"]),
-            location=data["location"],
-            category=data["category"],
-            heating=data["heating"],
-            balcony=bool(data.get("balcony", False)),
-            square=float(data["square"]),
-            price=float(data["price"]),
+            type=obj_type,
+            rooms=rooms,
+            floor=floor,  # Може бути відсутнє
+            total_floors=total_floors,
+            location=location,
+            category=category,
+            heating=heating,
+            balcony=balcony,
+            square=square,
+            price=price,
             status="доступний",
-            code=int(data["code"]),
+            code=code,
             created_date=date.today()  # Автоматично встановлюємо сьогоднішню дату
         )
         db.session.add(new_object)
@@ -95,7 +152,6 @@ def add_object_with_photos():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
-
 
 
 # Маршрут для зміни статусу об'єкта

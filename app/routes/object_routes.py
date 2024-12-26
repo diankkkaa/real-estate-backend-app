@@ -166,3 +166,43 @@ def get_object_details(object_id):
     }
 
     return jsonify(object_details)
+
+
+@bp.route('/objects/favorites', methods=['POST'])
+def get_short_info():
+    try:
+        # Отримуємо масив ID об'єктів із запиту
+        object_ids = request.json.get('object_ids', [])
+        
+        # Перевіряємо, чи масив ID є валідним
+        if not isinstance(object_ids, list) or not all(isinstance(id, int) for id in object_ids):
+            return jsonify({"error": "Invalid object_ids. It should be a list of integers."}), 400
+        
+        # Отримуємо об'єкти з бази даних за ID
+        objects_query = Object.query.filter(Object.object_id.in_(object_ids)).all()
+
+        # Формуємо відповідь із частковою інформацією
+        objects = []
+        for obj in objects_query:
+            # Отримуємо перше фото, якщо є
+            first_photo = obj.photos[0] if obj.photos else None
+            encoded_photo = encode_image_to_base64(first_photo.file_path) if first_photo else None
+            
+            # Додаємо об'єкт у список
+            objects.append({
+                "id": obj.object_id,
+                "title": obj.title,
+                "price": float(obj.price),
+                "square": float(obj.square),
+                "rooms": obj.rooms,
+                "floor": obj.floor,
+                "location": obj.location,
+                "price_per_sq_meter": obj.price_per_sq_meter,
+                "created_date": obj.created_date.strftime('%Y-%m-%d'),
+                "photo": encoded_photo  # Одне фото або None
+            })
+
+        return jsonify({"objects": objects}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

@@ -91,11 +91,11 @@ def get_filtered_objects():
 
         objects = []
         for obj in objects_query:
-            photos = []
-            for photo in obj.photos:
-                encoded_photo = encode_image_to_base64(photo.file_path)
-                if encoded_photo:
-                    photos.append({"photo_id": photo.photo_id, "image_base64": encoded_photo})
+            # Вибираємо лише перше фото (якщо є)
+            first_photo = obj.photos[0] if obj.photos else None
+            encoded_photo = None
+            if first_photo:
+                encoded_photo = encode_image_to_base64(first_photo.file_path)
 
             objects.append({
                 "id": obj.object_id,
@@ -107,14 +107,12 @@ def get_filtered_objects():
                 "location": obj.location,
                 "price_per_sq_meter": obj.price_per_sq_meter,
                 "created_date": obj.created_date.strftime('%Y-%m-%d'),
-                "photos": [
-            {
-                "photo_id": photo.photo_id,
-                "image_base64": base64.b64encode(open(photo.file_path, "rb").read()).decode("utf-8")
-            }
-            for photo in obj.photos
-        ]
+                "photo": {
+                    "photo_id": first_photo.photo_id if first_photo else None,
+                    "image_base64": encoded_photo
+                } if first_photo else None
             })
+
 
         total_objects = query.count()
         total_pages = (total_objects + limit - 1) // limit

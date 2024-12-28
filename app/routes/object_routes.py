@@ -182,11 +182,12 @@ def get_short_info():
         # Формуємо відповідь із частковою інформацією
         objects = []
         for obj in objects_query:
-            # Отримуємо перше фото, якщо є
+            # Вибираємо лише перше фото (якщо є)
             first_photo = obj.photos[0] if obj.photos else None
-            encoded_photo = encode_image_to_base64(first_photo.file_path) if first_photo else None
-            
-            # Додаємо об'єкт у список
+            encoded_photo = None
+            if first_photo:
+                encoded_photo = encode_image_to_base64(first_photo.file_path)
+
             objects.append({
                 "id": obj.object_id,
                 "title": obj.title,
@@ -197,8 +198,12 @@ def get_short_info():
                 "location": obj.location,
                 "price_per_sq_meter": obj.price_per_sq_meter,
                 "created_date": obj.created_date.strftime('%Y-%m-%d'),
-                "photo": encoded_photo  # Одне фото або None
+                "photo": {
+                    "photo_id": first_photo.photo_id if first_photo else None,
+                    "image_base64": encoded_photo
+                } if first_photo else None
             })
+
 
         return jsonify({"objects": objects}), 200
 

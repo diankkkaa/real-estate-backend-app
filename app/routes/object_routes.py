@@ -7,7 +7,7 @@ import base64
 
 bp = Blueprint('objects', __name__, url_prefix='/api')
 
-# Функція для перетворення шляху до зображення в Base64
+# перетворення в Base64
 def encode_image_to_base64(file_path):
     abs_file_path = os.path.join(os.getcwd(), file_path)
     if not os.path.exists(abs_file_path):
@@ -91,7 +91,7 @@ def get_filtered_objects():
 
         objects = []
         for obj in objects_query:
-            # Вибираємо лише перше фото (якщо є)
+            # лише перше фото (якщо є)
             first_photo = obj.photos[0] if obj.photos else None
             encoded_photo = None
             if first_photo:
@@ -131,7 +131,7 @@ def get_filtered_objects():
 
 @bp.route('/objects/<int:object_id>', methods=['GET'])
 def get_object_details(object_id):
-    obj = Object.query.filter_by(object_id=object_id).first()
+    obj = Object.query.filter_by(object_id=object_id, status='доступний').first()
 
     if not obj:
         return jsonify({"error": "Object not found"}), 404
@@ -169,20 +169,15 @@ def get_object_details(object_id):
 @bp.route('/objects/favorites', methods=['POST'])
 def get_short_info():
     try:
-        # Отримуємо масив ID об'єктів із запиту
         object_ids = request.json.get('object_ids', [])
         
-        # Перевіряємо, чи масив ID є валідним
         if not isinstance(object_ids, list) or not all(isinstance(id, int) for id in object_ids):
             return jsonify({"error": "Invalid object_ids. It should be a list of integers."}), 400
         
-        # Отримуємо об'єкти з бази даних за ID
-        objects_query = Object.query.filter(Object.object_id.in_(object_ids)).all()
+        objects_query = Object.query.filter(Object.object_id.in_(object_ids), Object.status == 'доступний').all()
 
-        # Формуємо відповідь із частковою інформацією
         objects = []
         for obj in objects_query:
-            # Вибираємо лише перше фото (якщо є)
             first_photo = obj.photos[0] if obj.photos else None
             encoded_photo = None
             if first_photo:

@@ -7,7 +7,6 @@ import os
 from flask import current_app
 from werkzeug.utils import secure_filename
 
-# Дозволені розширення файлів
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'bmp'}
 
 def allowed_file(filename):
@@ -18,15 +17,13 @@ admin_routes = Blueprint('admin_routes', __name__)
 @admin_routes.route('/admin/add-object-with-photos', methods=['POST'])
 @jwt_required()
 def add_object_with_photos():
-    # Перевірка наявності файлів у запиті
     if 'photos' not in request.files:
         return jsonify({"error": "No photos in the request"}), 400
 
-    files = request.files.getlist('photos')  # Отримуємо всі файли
+    files = request.files.getlist('photos')  
     if not files or all(file.filename == '' for file in files):
         return jsonify({"error": "No files selected"}), 400
 
-    # Перевірка обов'язкових текстових полів
     required_fields = [
         "title", "price", "square", "rooms", "total_floors", 
         "location", "category", "heating", "code", "type"
@@ -36,7 +33,7 @@ def add_object_with_photos():
         if field not in data:
             return jsonify({"error": f"Field {field} is required"}), 400
 
-    # Детальна перевірка даних
+    # перевірка введених даних
     try:
         title = data["title"]
         if not isinstance(title, str) or len(title) > 255:
@@ -90,17 +87,15 @@ def add_object_with_photos():
         balcony = balcony == "true"
 
 
-        # Спеціальна перевірка для "будинок"
         if obj_type == "будинок" and (floor not in [None, 0]):
             return jsonify({"error": "For type 'будинок', floor must be empty or 0."}), 400
 
-        # Додавання нового об'єкта
         new_object = Object(
             title=title,
             description=data.get("description"),
             type=obj_type,
             rooms=rooms,
-            floor=floor,  # Може бути відсутнє
+            floor=floor,  # може бути відсутнє
             total_floors=total_floors,
             location=location,
             category=category,
@@ -110,31 +105,27 @@ def add_object_with_photos():
             price=price,
             status="доступний",
             code=code,
-            created_date=date.today()  # Автоматично встановлюємо сьогоднішню дату
+            created_date=date.today() 
         )
         db.session.add(new_object)
-        db.session.flush()  # Отримуємо object_id для фото
+        db.session.flush()  
 
-        # Завантаження кожного фото
         uploaded_photos = []
         upload_folder = current_app.config['UPLOAD_FOLDER']
-        object_folder = os.path.join("app", upload_folder)  # Шлях для збереження в app/upload
-        os.makedirs(object_folder, exist_ok=True)  # Створюємо папку, якщо її немає
+        object_folder = os.path.join("app", upload_folder)  # шлях для збереження в app/upload
+        os.makedirs(object_folder, exist_ok=True)  
 
         for file in files:
             if allowed_file(file.filename):
-                # Генерація безпечного шляху для файлу
                 filename = secure_filename(file.filename)
                 file_path = os.path.join(object_folder, filename)
                 file.save(file_path)
 
-                # Відносний шлях для збереження у БД
                 relative_path = f"app\\{os.path.relpath(file_path, current_app.root_path)}"
 
-                # Додавання запису до бази даних
                 photo = Photo(object_id=new_object.object_id, file_path=relative_path)
                 db.session.add(photo)
-                db.session.flush()  # Оновлюємо ID фото
+                db.session.flush()  
                 uploaded_photos.append(photo.photo_id)
             else:
                 return jsonify({"error": f"Invalid file format for {file.filename}"}), 400
@@ -143,7 +134,7 @@ def add_object_with_photos():
         return jsonify({
             "message": "Object and photos added successfully",
             "object_id": new_object.object_id,
-            "photo_ids": uploaded_photos  # Повертаємо всі ID завантажених фото
+            "photo_ids": uploaded_photos  
         }), 201
 
     except IntegrityError:
@@ -154,7 +145,6 @@ def add_object_with_photos():
         return jsonify({"error": str(e)}), 500
 
 
-# Маршрут для зміни статусу об'єкта
 @admin_routes.route('/admin/change-status/<int:object_id>', methods=['PATCH'])
 @jwt_required()
 def change_status(object_id):

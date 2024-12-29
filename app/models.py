@@ -16,9 +16,6 @@ class Photo(db.Model):
     object_id = db.Column(db.Integer, db.ForeignKey('Objects.object_id', ondelete='CASCADE'))
     file_path = db.Column(db.String, nullable=False)
 
-    # Відношення до об'єкта
-    #object = db.relationship('Object', back_populates='photos')
-
 
 class Object(db.Model):
     __tablename__ = 'Objects'
@@ -40,7 +37,6 @@ class Object(db.Model):
     code = db.Column(db.Integer, nullable=False, unique=True)
     created_date = db.Column(db.Date, nullable=False)
 
-    # Відношення до фотографій
     photos = relationship('Photo', backref='object', lazy='dynamic')
 
     @hybrid_property
